@@ -6,3 +6,6 @@ out/
 .project
 .idea/
 *.iml
+
+# Laufzeitdaten (Messwerte-Backup)
+src/wetterStationObserver/Backup/

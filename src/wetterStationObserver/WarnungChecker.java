@@ -3,37 +3,97 @@ package wetterStationObserver;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
 public class WarnungChecker extends JFrame implements WetterChecker {
 
     private static final long serialVersionUID = 1L;
-    private final JLabel lblWarnung = new JLabel("Warte auf Daten …", SwingConstants.CENTER);
-
-    public WarnungChecker(String name) {
-        super("Wetterwarnung "+name);  //Verschiedene Titel für die WarnungFenster
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setBounds(100, 100, 600, 300);
-        setLocationByPlatform(true);
-        lblWarnung.setFont(new Font("Tahoma", Font.BOLD, 22));
-        lblWarnung.setOpaque(true);                 // sonst ist die Hintergrundfarbe unsichtbar
-        add(lblWarnung, BorderLayout.CENTER);
-        setVisible(true);
+    private final JLabel labelWarnung = new JLabel("Warte auf Daten …", SwingConstants.CENTER);
+    private final WetterStation station;
+    
+    private static final Map<WetterStation, WarnungChecker> stationListe = new HashMap<>();
+    
+    private WarnungChecker(WetterStation station) {
+        super("Wetterwarnung "+station.getName());
+        this.station = station;
+        baueFenster();
     }
-
+    
+    public static WarnungChecker erstelle(WetterStation ws) {
+    	if (!stationListe.containsKey(ws)) {
+    		WarnungChecker neu = new WarnungChecker(ws);
+    		stationListe.put(ws, neu);
+    		ws.hinzufuegen(neu);
+    	}
+		return stationListe.get(ws);
+    }
+    
+    private void testeLesenSchreiben() {
+		String text = String.join("\n", station.getFile().lese());
+		JTextArea area = new JTextArea(text, 15, 50);                     
+		area.setEditable(false);
+		JOptionPane.showMessageDialog(null, new JScrollPane(area), "File schreiben und lesen testen! Daten aus " + station.getName() + ": ", JOptionPane.INFORMATION_MESSAGE);
+    }
+    
+    private void baueFenster() {
+	    setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+	    setSize(600, 300);
+	    setLocationByPlatform(true);
+	    labelWarnung.setFont(new Font("Tahoma", Font.BOLD, 22));
+	    labelWarnung.setOpaque(true);      
+	    JButton button = new JButton("Pause");
+	    button.setFont(new Font("Tahoma", Font.BOLD, 25));
+	    button.setBorderPainted(true);
+	    button.addActionListener(new ActionListener() {
+	        @Override
+	    	public void actionPerformed(ActionEvent e) {
+	        	if (station.isAktiv()) {
+	        		station.pause();
+	        		button.setText("Restart");
+	        	} else {
+	        		station.restart();
+	        		button.setText("Pause");
+	        	}
+	        }
+	    });
+	    add(labelWarnung, BorderLayout.CENTER);
+	    add(button, BorderLayout.SOUTH); 
+	    addWindowListener(new WindowAdapter(){
+	    	@Override
+	    	public void windowClosed(WindowEvent e) {
+	    		station.entfernen(WarnungChecker.this);
+	    		station.interrupt();
+	    		stationListe.remove(station);
+	    		testeLesenSchreiben();
+	    	}
+	    });
+	    setVisible(true);
+    }
+    
+    
     @Override
     public void refresche(WetterDaten daten) {
-        // 1) Auswerten: läuft noch im Thread der Station (schnell, kein GUI-Zugriff)
         String titel;
         Color farbe;
         if (daten.getTemperatur() > 30) {
             titel = "GEFAHR! HITZEWELLE";
             farbe = Color.RED;
         } else if (daten.getTemperatur() < 0) {
-            titel = "GEFAHR! FROST";
+            titel = "GLATTEISGEFAHR";
             farbe = Color.CYAN;
         } else if (daten.getStatus() == Status.GEWITTER) {
             titel = "STARKES GEWITTER";
@@ -43,15 +103,13 @@ public class WarnungChecker extends JFrame implements WetterChecker {
             farbe = Color.GREEN;
         }
 
-        // JLabel kann mit HTML mehrzeilig anzeigen: \n wird zu <br>
         String text = "<html><center><b>" + titel + "</b><br><br>"
                     + daten.toString().replace("\n", "<br>")
                     + "</center></html>";
 
-        // 2) Anzeigen: an den Swing-Thread (EDT) übergeben, die Station läuft sofort weiter
         SwingUtilities.invokeLater(() -> {
-            lblWarnung.setText(text);
-            lblWarnung.setBackground(farbe);
+            labelWarnung.setText(text);
+            labelWarnung.setBackground(farbe);
         });
     }
 }

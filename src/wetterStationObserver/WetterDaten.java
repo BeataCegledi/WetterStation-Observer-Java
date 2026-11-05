@@ -47,4 +47,9 @@ public class WetterDaten {
              + String.format("%.1f °C, %d %%, %s %d Bft, %s",
                              temperatur, luftFeuchtigkeit, windRichtung, windStaerke, status);
     }
+    
+    public String saveString() {
+	    return zeit.format(FORMAT) + ", " + String.format("%.1f °C, %d %%, %s %d Bft, %s",
+	                             temperatur, luftFeuchtigkeit, windRichtung, windStaerke, status);
+	}
 }
