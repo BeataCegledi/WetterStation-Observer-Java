@@ -7,8 +7,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -25,7 +25,7 @@ public class WarnungChecker extends JFrame implements WetterChecker {
     private final JLabel labelWarnung = new JLabel("Warte auf Daten …", SwingConstants.CENTER);
     private final WetterStation station;
     
-    private static final Map<WetterStation, WarnungChecker> stationListe = new HashMap<>();
+    private static final Map<WetterStation, WarnungChecker> stationListe = new ConcurrentHashMap<>();
     
     private WarnungChecker(WetterStation station) {
         super("Wetterwarnung "+station.getName());
@@ -33,7 +33,7 @@ public class WarnungChecker extends JFrame implements WetterChecker {
         baueFenster();
     }
     
-    public static WarnungChecker erstelle(WetterStation ws) {
+    public static WarnungChecker erstellenUndHinzufuegen(WetterStation ws) {
     	if (!stationListe.containsKey(ws)) {
     		WarnungChecker neu = new WarnungChecker(ws);
     		stationListe.put(ws, neu);
@@ -42,13 +42,7 @@ public class WarnungChecker extends JFrame implements WetterChecker {
 		return stationListe.get(ws);
     }
     
-    private void testeLesenSchreiben() {
-		String text = String.join("\n", station.getFile().lese());
-		JTextArea area = new JTextArea(text, 15, 50);                     
-		area.setEditable(false);
-		JOptionPane.showMessageDialog(null, new JScrollPane(area), "File schreiben und lesen testen! Daten aus " + station.getName() + ": ", JOptionPane.INFORMATION_MESSAGE);
-    }
-    
+   
     private void baueFenster() {
 	    setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 	    setSize(600, 300);
@@ -78,7 +72,6 @@ public class WarnungChecker extends JFrame implements WetterChecker {
 	    		station.entfernen(WarnungChecker.this);
 	    		station.interrupt();
 	    		stationListe.remove(station);
-	    		testeLesenSchreiben();
 	    	}
 	    });
 	    setVisible(true);

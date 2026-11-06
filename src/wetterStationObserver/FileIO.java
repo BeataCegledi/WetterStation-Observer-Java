@@ -7,23 +7,30 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-public class FileIO {
+public class FileIO implements WetterChecker{
 	private final String dateiname;
+	private static final Map<WetterStation, FileIO> stationListe = new ConcurrentHashMap<>();
+	    
+	  
+    public static FileIO erstellenUndHinzufuegen(WetterStation ws) {
+    	if (!stationListe.containsKey(ws)) {
+    		FileIO neu = new FileIO(ws);
+    		stationListe.put(ws, neu);
+    		ws.hinzufuegen(neu);
+    	}
+		return stationListe.get(ws);
+    }
+	    
 
-	public FileIO(String name) {
+	private FileIO(WetterStation ws) {
 		new File(".\\src\\wetterStationObserver\\Backup").mkdirs();         
-		this.dateiname = ".\\src\\wetterStationObserver\\Backup\\"+ name +".txt";
+		this.dateiname = ".\\src\\wetterStationObserver\\Backup\\"+ ws.getName() +".txt";
 	}
 		
-		
-	public void speichere(WetterDaten daten) {
-		try (PrintWriter pr = new PrintWriter(new FileWriter(dateiname, true))) {
-			pr.println(daten.saveString());
-		} catch (IOException e) {
-			System.out.println(e.getMessage());
-		}
-	}
+	
 	
 	public List<String> lese() {
 		List <String> zeilen = new ArrayList<>();
@@ -36,5 +43,15 @@ public class FileIO {
 			return List.of(e.getMessage());
 		}
 		return zeilen;
+	}
+
+
+	@Override
+	public void refresche(WetterDaten daten) {
+		try (PrintWriter pr = new PrintWriter(new FileWriter(dateiname, true))) {
+			pr.println(daten.saveString());
+		} catch (IOException e) {
+			System.out.println(e.getMessage());
+		}
 	}
 }

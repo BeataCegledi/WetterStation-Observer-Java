@@ -9,14 +9,12 @@ import java.util.concurrent.ThreadLocalRandom;
 public class WetterStation extends Thread implements WetterList{
 	private final List<WetterChecker> checkers;
 	private final int secunden;
-	private final FileIO file;
 	private volatile boolean aktiv = true;
 	
 	public WetterStation(String name, int secunden) {
 		super(name);
 		this.checkers = new CopyOnWriteArrayList<>();
 		this.secunden = secunden;
-		file = new FileIO(name);
 	}
 	
 	public WetterStation(String name) {
@@ -35,9 +33,7 @@ public class WetterStation extends Thread implements WetterList{
 		return aktiv;
 	}
 	
-	public FileIO getFile() {
-		return file;
-	}
+
 	@Override
 	public List<WetterChecker> getList() {
 		return this.checkers;
@@ -55,7 +51,6 @@ public class WetterStation extends Thread implements WetterList{
 		Status s = alleS[ThreadLocalRandom.current().nextInt(0, alleS.length)];
 		WetterDaten daten = new WetterDaten(getName(), zeit,t,f, wr, ws, s);
 		bescheid(daten);
-		file.speichere(daten);
 	}
 	
 	@Override

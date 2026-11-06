@@ -38,13 +38,13 @@ Das Projekt zeigt, wie das Observer-Pattern Datenquelle und Anzeige sauber vonei
 |---|---|
 | Klick auf **Pause** | Station misst nicht mehr, Thread läuft weiter; Button zeigt **Restart** |
 | Klick auf **Restart** | Station misst wieder; Button zeigt **Pause** |
-| Fenster schließen | Fenster meldet sich ab, Stations-Thread wird beendet, gespeicherte Messwerte werden angezeigt |
-| alle Fenster geschlossen | alle Stationen beendet → auch die Konsolenausgabe endet |
+| Fenster schließen | Fenster meldet sich ab, Stations-Thread wird beendet |
+| alle Fenster geschlossen | alle Stationen beendet → Konsolenausgabe endet, danach zeigt `TesteBackup` die gespeicherten Messwerte jeder Station an |
 
 ### Ausgabe
 - **Konsole:** formatierter Wetterbericht mit Datum, Uhrzeit und allen Messwerten
 - **Swing-Fenster:** genau ein Warnfenster pro Station mit farbigem Hintergrund und aktuellem Bericht
-- **Datei:** jede Messung wird an `src/wetterStationObserver/Backup/<Station>.txt` angehängt
+- **Datei:** `FileIO` ist selbst ein Observer und hängt jede Messung an `src/wetterStationObserver/Backup/<Station>.txt` an
 
 ## Verwendete Java-Konzepte
 
@@ -53,8 +53,12 @@ Das Projekt zeigt, wie das Observer-Pattern Datenquelle und Anzeige sauber vonei
 | Observer-Pattern | `WetterStation` (Subject) benachrichtigt alle `WetterChecker` (Observer) |
 | Interface mit `default`-Methoden | `WetterList` liefert `hinzufuegen`, `entfernen`, `bescheid` fertig mit |
 | `@FunctionalInterface` | `WetterChecker` mit genau einer Methode `refresche` |
-| Fabrikmethode + `Map` (Multiton) | `WarnungChecker.erstelle(station)` mit `private` Konstruktor: genau ein Fenster pro Station, genau einmal angemeldet |
+| Fabrikmethode + `Map` (Multiton) | `WarnungChecker` und `FileIO` mit `erstellenUndHinzufuegen(station)` und `private` Konstruktor: genau ein Fenster bzw. eine Datei pro Station, genau einmal angemeldet |
+| `ConcurrentHashMap` | Thread-sichere Multiton-Map (`put` im `main`-Thread, `remove` im EDT) |
+| SOLID (S, O, D) | `WetterStation` kennt nur das Interface `WetterChecker` – Speichern, Anzeige und Warnung sind eigene Observer |
+| Hilfsklasse mit `private` Konstruktor | `TesteBackup` mit statischer Methode `teste(station)` |
 | `Thread` / `run()` | Jede Station misst unabhängig in eigenem Thread |
+| `join()` | `main` wartet, bis alle Stations-Threads beendet sind, und liest erst dann die Backup-Dateien |
 | `volatile boolean` | Pause/Restart-Flag, das der Swing-Thread setzt und der Stations-Thread sofort sieht |
 | `interrupt()` + `InterruptedException` | Sauberes Beenden des Stations-Threads beim Schließen des Fensters |
 | `CopyOnWriteArrayList` | Thread-sichere Observer-Liste (Abmelden im EDT während `bescheid` im Stations-Thread läuft) |
@@ -81,4 +85,4 @@ java -cp bin wetterStationObserver.StarteWetterbericht
 ## Über die Entwicklerin
 
 Dieses Projekt entstand als Übungsaufgabe in der Berufsschule.
-Es zeigt meine Fähigkeit, Entwurfsmuster (Observer, Fabrikmethode) mit Interfaces umzusetzen, nebenläufige Threads thread-sicher zu steuern und anzuhalten sowie eine Swing-Oberfläche ereignisgesteuert zu bedienen.
+Es zeigt meine Fähigkeit, Entwurfsmuster (Observer, Fabrikmethode, Multiton) mit Interfaces nach SOLID-Prinzipien umzusetzen, nebenläufige Threads thread-sicher zu steuern und anzuhalten sowie eine Swing-Oberfläche ereignisgesteuert zu bedienen.

@@ -11,12 +11,22 @@ public class StarteWetterbericht {
 		munich.hinzufuegen(konsole);
 		vs.hinzufuegen(konsole);
 		
-		WarnungChecker.erstelle(munich);
-		WarnungChecker.erstelle(vs); 
+		WarnungChecker.erstellenUndHinzufuegen(munich);
+		WarnungChecker.erstellenUndHinzufuegen(vs); 
+		
+		FileIO.erstellenUndHinzufuegen(munich);
+		FileIO.erstellenUndHinzufuegen(vs);
 		
 		munich.start();
 		vs.start();
+		try {
+		    munich.join();          
+		    vs.join();              
+		} catch (InterruptedException e) {
+		    e.printStackTrace();
+		}
+		TesteBackup.teste(munich);   
+		TesteBackup.teste(vs);
 
-		
 	}
 }
